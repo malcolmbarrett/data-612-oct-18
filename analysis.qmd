@@ -1,0 +1,60 @@
+---
+title: "Analysis"
+format: html
+---
+
+## Reshaping data
+
+```{r}
+library(tidyverse)
+co2_emissions <- read_csv("data/co2_emissions_tonnes_per_person.csv")
+co2_emissions_tidy <- co2_emissions |> 
+  mutate(across(-country, as.numeric)) |> 
+  pivot_longer(-country, names_to = "year", values_to = "co2")
+```
+
+```{r}
+iceland <- co2_emissions_tidy |> 
+  filter(country == "Iceland")
+
+co2_emissions_tidy |> 
+  filter(country != "Iceland") |> 
+  ggplot(aes(year, co2, color = country, group = country)) + 
+  geom_line(color = "grey80") + 
+  geom_line(data = iceland, color = "steelblue", linewidth = 1) + 
+  theme(legend.position = "none") +
+  scale_y_log10()
+```
+
+```{r}
+diasasters_cost <- read_csv("data/disasters_cost.csv", skip = 2) |> 
+  select(Year, ends_with("count"), ends_with("Cost"))
+
+diasasters_cost_tidy <- diasasters_cost |> 
+  pivot_longer(-Year) |> 
+  separate(name, into = c("disaster", "variable"), sep = "\\s(?=\\w+$)") |> 
+  pivot_wider(names_from = variable, values_from = value) |> 
+  janitor::clean_names()
+
+diasasters_cost_wider <- diasasters_cost |> 
+  pivot_longer(-Year) |> 
+  separate(name, into = c("disaster", "variable"), sep = "\\s(?=\\w+$)") |> 
+  janitor::clean_names()
+```
+
+```{r}
+diasasters_cost_tidy |> 
+  ggplot(aes(year, cost, color = disaster)) +
+  geom_line() + 
+  facet_wrap(~ disaster) + 
+  theme(legend.position = "none")
+```
+
+```{r}
+diasasters_cost_wider |> 
+  ggplot(aes(year, value, color = disaster)) +
+  geom_line() + 
+  facet_grid(variable ~ disaster, scales = "free_y") + 
+  theme(legend.position = "none")
+```
+
